@@ -1,0 +1,11 @@
+Cod DEC 128
+Cod HEX 0x00000080
+
+NGCC call - eNGCC_ONHOLD
+DN Out call - Undefined
+DN In call - Undefined
+NACD call - Undefined
+ACD call - Undefined
+
+eNGCC_ONHOLD
+

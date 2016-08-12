@@ -1,25 +1,30 @@
 package Main;
 
 
-
-
 import java.io.BufferedReader;
+import java.io.FileWriter;
 import java.io.InputStreamReader;
+import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import Main.Cod;
+
+
+
 
 public class Main {
 
     public static void main(String[] args) throws Exception {
         // write your code here
+
+        System.out.println("Enter the code (a blank line - input completion):");
+
         BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
 
         List<Cod> allcod = new ArrayList<Cod>();
 
-
+//Ввод кодов, по пустой строке конец
         while (true) {
 
             String tempread = reader.readLine();
@@ -28,39 +33,61 @@ public class Main {
 
         }
 
+// Обработка и вывод результата
         for (Cod z: allcod) {
-
-            parscod(z);
+            if (!z.wrongcod) {
+                parscod(z);
+                System.out.println(z);
+                System.out.println("");
+            }
 
         }
 
+// Запись в файл
+        PrintWriter out = new PrintWriter(new FileWriter("Results.txt"));
+        try {
+            for (Cod z: allcod) {
+                if (!z.wrongcod) {
+                    out.println(z);
+                    out.println("");
+                }
+            }
+        }
+        catch (Exception x) {
+            System.out.println("Error writing to file:" + x.getMessage());
+        }
+        finally {
+            if(out != null) out.close();
+        }
 
 
-
-        //parscod(reader.readLine());
 
     }
     public static void parscod(Cod tempcod) {
 
-        Long temp =  Long.parseLong(tempcod.cods);
+//получаем код
+        Long temp =  tempcod.longcod;
 
-        if(temp==0) throw new NullPointerException("eUNDEFINED");
-        if(temp==4294967295l) throw new NullPointerException("NGCC_LOGOUT");
+//Провера
+        if(temp==0) tempcod.eUNDEFINED = true;
+        if(temp==4294967295l) tempcod.NGCC_LOGOUT = true;
+        tempcod.wrongcod = (temp > 4294967295l || (((temp%16) != 0))&&(temp!=4294967295l));
 
+//Перевод в HEX
         String inputhex = Long.toHexString(temp);
 
+//Дописываем до 8 знаков
         while (inputhex.length()<8){
             inputhex = "0"+inputhex;
         }
 
-
+//Заполняем проверочные массивы МАП
             Map<String, String> acdcall = new HashMap<>();
             acdcall.put("1", "eACD_ONHOLD");
             acdcall.put("2", "eACD_ACTIVE");
             acdcall.put("4", "eACD_RESERVE_1");
             acdcall.put("8", "eACD_RESERVE_2");
             acdcall.put("0", "Undefined");
-
 
             Map<String, String> nacdcall = new HashMap<>();
             nacdcall.put("1", "eNACD_ONHOLD");
@@ -100,33 +127,32 @@ public class Main {
             ngcccall.put("800", "eNGCC_RESERVE_2");
             ngcccall.put("000", "Undefined");
 
-
+//Разбираем код
         try {
-            System.out.println("HEX cod = 0x" + inputhex);
-            System.out.println("");
+            if(!tempcod.wrongcod && !tempcod.eUNDEFINED && !tempcod.NGCC_LOGOUT) {
+                if (ngcccall.containsKey(inputhex.substring(inputhex.length() - 3, inputhex.length())))
+                    tempcod.codmap.put("NGCC call", ngcccall.get(inputhex.substring(inputhex.length() - 3, inputhex.length())));
+                else tempcod.wrongcod = true;
 
-            if(ngcccall.containsKey(inputhex.substring(inputhex.length()-3, inputhex.length())))
-                System.out.println("NGCC call = " + ngcccall.get(inputhex.substring(inputhex.length()-3, inputhex.length())));
-            else System.out.println("Не корректный код!");
+                if (dnoutcall.containsKey(inputhex.substring(inputhex.length() - 4, inputhex.length() - 3)))
+                    tempcod.codmap.put("DN Out call", dnoutcall.get(inputhex.substring(inputhex.length() - 4, inputhex.length() - 3)));
+                else tempcod.wrongcod = true;
 
-            if(dnoutcall.containsKey(inputhex.substring(inputhex.length()-4, inputhex.length()-3)))
-                System.out.println("DN Out call = " + dnoutcall.get(inputhex.substring(inputhex.length()-4, inputhex.length()-3)));
-            else System.out.println("Не корректный код!");
+                if (dnincall.containsKey(inputhex.substring(inputhex.length() - 5, inputhex.length() - 4)))
+                    tempcod.codmap.put("DN In call", dnincall.get(inputhex.substring(inputhex.length() - 5, inputhex.length() - 4)));
+                else tempcod.wrongcod = true;
 
-            if(dnincall.containsKey(inputhex.substring(inputhex.length()-5, inputhex.length()-4)))
-                System.out.println("DN In call = " + dnincall.get(inputhex.substring(inputhex.length()-5, inputhex.length()-4)));
-            else System.out.println("Не корректный код!");
+                if (nacdcall.containsKey(inputhex.substring(inputhex.length() - 6, inputhex.length() - 5)))
+                    tempcod.codmap.put("NACD call", nacdcall.get(inputhex.substring(inputhex.length() - 6, inputhex.length() - 5)));
+                else tempcod.wrongcod = true;
 
-            if(nacdcall.containsKey(inputhex.substring(inputhex.length()-6, inputhex.length()-5)))
-                System.out.println("NACD call = " + nacdcall.get(inputhex.substring(inputhex.length()-6, inputhex.length()-5)));
-            else System.out.println("Не корректный код!");
+                if (acdcall.containsKey(inputhex.substring(inputhex.length() - 7, inputhex.length() - 6)))
+                    tempcod.codmap.put("ACD call", acdcall.get(inputhex.substring(inputhex.length() - 7, inputhex.length() - 6)));
+                else tempcod.wrongcod = true;
 
-            if(acdcall.containsKey(inputhex.substring(inputhex.length()-7, inputhex.length()-6)))
-                System.out.println("ACD call = " + acdcall.get(inputhex.substring(inputhex.length()-7, inputhex.length()-6)));
-            else System.out.println("Не корректный код!");
-
-            if(inputhex.substring(inputhex.length()-8, inputhex.length()-7).equals("1"))
-                System.out.println("Independent call Independent call (i.e. Walkaway)");
+                if (inputhex.substring(inputhex.length() - 8, inputhex.length() - 7).equals("1"))
+                    tempcod.walkaway = true;
+            }
 
         }
 
